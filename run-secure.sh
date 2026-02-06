@@ -39,6 +39,15 @@ if docker ps -a --filter "name=${CONTAINER_NAME}" --format '{{.Names}}' | grep -
     docker rm "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 fi
 
+# Check for port conflicts
+if docker ps --format '{{.Ports}}' | grep -q "0.0.0.0:${PORT}->"; then
+    log_error "Port ${PORT} is already in use by another container:"
+    docker ps --format 'table {{.Names}}\t{{.Ports}}' | grep ":${PORT}->"
+    log_info "Run 'docker ps' to see running containers"
+    log_info "Stop conflicting containers with: docker stop <container_name>"
+    exit 1
+fi
+
 # Build image
 log_info "Building image..."
 docker build -t "${IMAGE_NAME}" . >/dev/null || {
